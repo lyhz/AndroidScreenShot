@@ -31,45 +31,9 @@ public class MainActivity extends Activity implements OnClickListener{
 	private WindowManager mWindowManager;
 	
 	private int SampleNumber = 500;
-	private double screenpower = 0.0;
-	
-	private double rpower = 3.0647e-006;
-	private double gpower = 4.4799e-006;
-	private double bpower = 6.4045e-006;
-	
-	
 	
 	private int[] pixels = new int[SampleNumber];
 	
-	 private boolean state = false;
-	 private int period=1000;
-	private final Handler powerHandler = new Handler();
-    private final Runnable powerPeriodicTask = new Runnable() {
-        public void run() {
-            if(!state)
-            	return;
-            mDisplay.getRealMetrics(mDisplayMetrics);
-	        float[] dims = {mDisplayMetrics.widthPixels, mDisplayMetrics.heightPixels};
-	        float degrees = getDegreesForRotation(mDisplay.getRotation());
-	        boolean requiresRotation = (degrees > 0);
-	        Log.i("screenshot", "Start the native function");
-	        long tstart = System.currentTimeMillis();
-	        mScreenBitmap = SurfaceControl.screenshot((int) dims[0], (int) dims[1]);
-	        
-	        CalculatePower(mScreenBitmap);
-	        long tend = System.currentTimeMillis();
-	        Log.i("screenshot", "end the native function");
-	        Log.i("screen", "the time is "+ String.valueOf(tend-tstart));
-	        Log.i("screen", "the power is "+ screenpower);
-	        
-	        if (mScreenBitmap == null) {
-	        	          Log.i("screenshot","we can not get the screenshot");
-	        	            return;
-	        	        }
-          
-            powerHandler.postDelayed(powerPeriodicTask, period);
-        }
-    };     
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -92,28 +56,27 @@ public class MainActivity extends Activity implements OnClickListener{
 	@Override
 	public void onClick(View v) {
 		if(v.equals(bt_screenshot)){
-	//		mDisplay.getRealMetrics(mDisplayMetrics);
-	//        float[] dims = {mDisplayMetrics.widthPixels, mDisplayMetrics.heightPixels};
-	//        float degrees = getDegreesForRotation(mDisplay.getRotation());
-	//        boolean requiresRotation = (degrees > 0);
-	/*        if (requiresRotation) {
+			mDisplay.getRealMetrics(mDisplayMetrics);
+	        float[] dims = {mDisplayMetrics.widthPixels, mDisplayMetrics.heightPixels};
+	        float degrees = getDegreesForRotation(mDisplay.getRotation());
+	        boolean requiresRotation = (degrees > 0);
+	        if (requiresRotation) {
 	            // Get the dimensions of the device in its native orientation
 	            mDisplayMatrix.reset();
 	            mDisplayMatrix.preRotate(-degrees);
 	            mDisplayMatrix.mapPoints(dims);
 	            dims[0] = Math.abs(dims[0]);
 	            dims[1] = Math.abs(dims[1]);
-	        }*/
-	//        Log.i("screenshot", "Start the native function");
-	//        long tstart = System.currentTimeMillis();
-	//        mScreenBitmap = SurfaceControl.screenshot((int) dims[0], (int) dims[1]);
+	        }
+	        Log.i("screenshot", "Start the native function");
 	        
-	//        CalculatePower(mScreenBitmap);
-	//        long tend = System.currentTimeMillis();
-	//        Log.i("screenshot", "end the native function");
-	//        Log.i("screen", "the time is "+ String.valueOf(tend-tstart));
-	 //       Log.i("screen", "the power is "+ screenpower);
-	  /*      if (requiresRotation) {
+	        mScreenBitmap = SurfaceControl.screenshot((int) dims[0], (int) dims[1]);
+	        
+	        GetSamplePixels(mScreenBitmap);
+	
+	       Log.i("screenshot", "end the native function");
+	   
+	        if (requiresRotation) {
 	            // Rotate the screenshot to the current orientation
 	            Bitmap ss = Bitmap.createBitmap(mDisplayMetrics.widthPixels,
 	                    mDisplayMetrics.heightPixels, Bitmap.Config.ARGB_8888);
@@ -125,27 +88,25 @@ public class MainActivity extends Activity implements OnClickListener{
 	            c.setBitmap(null);
 	            mScreenBitmap = ss;
 	        }
-*/
-			powerHandler.postDelayed(powerPeriodicTask, period);   
-	        state = true;
+
+			
 	        // If we couldn't take the screenshot, notify the user
-	//        if (mScreenBitmap == null) {
-	//           Log.i("screenshot","we can not get the screenshot");
-	//            return;
-	//        }
+	        if (mScreenBitmap == null) {
+	           Log.i("screenshot","we can not get the screenshot");
+	            return;
+	        }
 
 	        // Optimizations
-/*	        mScreenBitmap.setHasAlpha(false);
+	        mScreenBitmap.setHasAlpha(false);
 	        mScreenBitmap.prepareToDraw();
-	        
-	     //   CalculatePower(mScreenBitmap);
+	 
 			
-	        img_display.setImageBitmap(mScreenBitmap);*/
+	        img_display.setImageBitmap(mScreenBitmap);
 		}
 		
 	}
 	
-	private void CalculatePower(Bitmap bitmap){
+	private void GetSamplePixels(Bitmap bitmap){
 
 	       int pi = 0;
 	       int h = bitmap.getHeight();
@@ -173,17 +134,9 @@ public class MainActivity extends Activity implements OnClickListener{
 	    	   b+=Color.blue(pixels[i]);
 	       }
 	       
-	       screenpower = (r/SampleNumber*rpower+g/SampleNumber*gpower+b/SampleNumber*bpower)*h*w;
-	       
 	        	
 	}
 	
-	@Override
-	public void onDestroy() {        
-		state = false;
-        powerHandler.removeCallbacks(powerPeriodicTask);
-	    super.onDestroy();
-	}
 	
 	/**
      * @return the current display rotation in degrees
